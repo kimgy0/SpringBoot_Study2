@@ -1,0 +1,12 @@
+<div th:if="${errors?.containsKey('globalError')}">
+      <p class="field-error" th:text="${errors['globalError']}">전체 오류 메세지</p>
+</div>
+
+이부분에서 errors? . ?.가 뭐냐면 errors가
+null 이면 그냥 무시해라라는 로직
+<널포인트 익셉션이 뜨는 대신에 null을 반환한다>
+<th:if에서 null은 실패로 처리되므로 오류메세지 출력하지않음.>
+
+
+errors.containsKey('globalError')
+물음표 없이 점만 적어주게 되면 널포인트 익셉션이 뜸.
