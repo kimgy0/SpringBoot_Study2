@@ -6,6 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -39,36 +43,32 @@ public class ValidationItemControllerV2 {
         return "validation/v2/addForm";
     }
 
-    @PostMapping("/add")
-    public String addItem(@ModelAttribute Item item,
+//    @PostMapping("/add")
+    public String addItemV1(@ModelAttribute Item item, BindingResult bindingResult,
                           RedirectAttributes redirectAttributes,
                           Model model) {
-       //검증 오류 결과를 보관
-        HashMap<String, String> errors = new HashMap<>();
-
         //검증 로직
         if(!StringUtils.hasText(item.getItemName())){
-            //만약 글자가 없으면
-            errors.put("itemName","상품 이름은 필수입니다.");
+            bindingResult.addError(new FieldError("item", "itemName", "상품 이름은 필수 입니다."));
+            //첫번째 인자는 모델에 담기는 item이름이고 두번째는 필드이름 세번째는 에러메세지.
+
         }
         if(item.getPrice() == null || item.getPrice()<1000 || item.getPrice() > 1000000){
-            errors.put("price","가격은 1,000 ~ 1,000,000 까지 허용합니다.");
+            bindingResult.addError(new FieldError("item", "price","가격은 1,000 ~ 1,000,000 까지 허용합니다."));
         }
         if(item.getQuantity() == null || item.getQuantity() >=999){
-            errors.put("quantity", "최대 수량은 9,999 까지만 허용합니다.");
+            bindingResult.addError(new FieldError("item", "quantity", "최대 수량은 9,999 까지만 허용합니다."));
         }
 
-        //특정 필드가 아닌 복합 룰 검증
         if(item.getPrice() != null && item.getQuantity() != null){
             int resultPrice = item.getPrice() * item.getQuantity();
             if(resultPrice < 10000){
-                errors.put("globalError", "가격 * 수량의 합은 10000원이 넘지 않습니다.");
+                bindingResult.addError(new ObjectError("item","가격 * 수량의 합은 10000원이 넘지 않습니다."));
+                //오브젝트 에러는 뭔가를 넘겨줄때
             }
         }
-
         //검증에 실패하면 다시 입력 폼으로
-        if(!errors.isEmpty()) {
-            model.addAttribute("errors", errors);
+        if(bindingResult.hasErrors()) {
             return "validation/v2/addForm";
         }
 
@@ -78,6 +78,219 @@ public class ValidationItemControllerV2 {
         redirectAttributes.addAttribute("status", true);
         return "redirect:/validation/v2/items/{itemId}";
     }
+
+
+    //리디렉트하고 나면 필드의 값이 자꾸 없어짐
+    //그것을 유지하기 위해 fielderror 에 인자를 더추가한 방식.
+//    @PostMapping("/add")
+    public String addItemV2(@ModelAttribute Item item, BindingResult bindingResult,
+                            RedirectAttributes redirectAttributes,
+                            Model model) {
+        //검증 로직
+        if(!StringUtils.hasText(item.getItemName())){
+            bindingResult.addError(new FieldError("item", "itemName",item.getItemName(),false,null,null, "상품 이름은 필수 입니다."));
+            /* v2로직에서는 리디렉트되면 값이 없어지는 현상을 고치려고 바인딩 인자를 추가해줌 저렇게
+            *  세번째인자에 바인딩된값을 넣어주고
+            *  false는 값이 잘 넘어왔으면 false로 지정해줌(변수에 값이 들어있는지!)
+            *  그리고 나머지는 null null 로 구성
+            * 마지막은 기본오류 메세지!
+            *  */
+            //첫번째 인자는 모델에 담기는 item이름이고 두번째는 필드이름 세번째는 에러메세지.
+
+        }
+        if(item.getPrice() == null || item.getPrice()<1000 || item.getPrice() > 1000000){
+            bindingResult.addError(new FieldError("item", "price",item.getPrice(),false,null,null,"가격은 1,000 ~ 1,000,000 까지 허용합니다."));
+            /*
+             * 예를 들어서 이부분이 qqq가 들어왔으면 타입체크가 안됨.
+             * 그러면 item.getPrice()에 qqq가 들어가고 그다음 false말고 true를 자동으로 내삽한다음에
+             * 뷰로 던져줌
+             */
+        }
+        if(item.getQuantity() == null || item.getQuantity() >=999){
+            bindingResult.addError(new FieldError("item", "quantity",item.getQuantity(),false,null,null, "최대 수량은 9,999 까지만 허용합니다."));
+        }
+
+        if(item.getPrice() != null && item.getQuantity() != null){
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if(resultPrice < 10000){
+                bindingResult.addError(new ObjectError("item",null,null,"가격 * 수량의 합은 10000원이 넘지 않습니다."));
+                //오브젝트 에러는 뭔가를 넘겨줄때
+                //이거는 인자가 원래값이 없게 하나 생략.
+            }
+        }
+        //검증에 실패하면 다시 입력 폼으로
+        if(bindingResult.hasErrors()) {
+            return "validation/v2/addForm";
+        }
+
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+
+    //리디렉트하고 나면 필드의 값이 자꾸 없어짐
+    //그것을 유지하기 위해 fielderror 에 인자를 더추가한 방식.
+
+    //+커스텀으로 메세지코드를 이용해서 메세지를 뽑아내려는 방식
+    // properties를 설정해야함. (errors.properties)
+//    @PostMapping("/add")
+    public String addItemV3(@ModelAttribute Item item, BindingResult bindingResult,
+                            RedirectAttributes redirectAttributes,
+                            Model model) {
+        //검증 로직
+        if(!StringUtils.hasText(item.getItemName())){
+            bindingResult.addError(new FieldError("item", "itemName",item.getItemName(),false,new String[]{"required.item.itemName"},null, "상품 이름은 필수 입니다."));
+            /**
+             * 커스텀 에러출력
+             *
+             * string 배열로 하기되면 만약 여러개가 들어가도 ㄱㅊ (error.properties)의 키값을 넣어줌.
+             * 인자가 필요없으니까 다음 값은 null
+             *
+             */
+
+
+            /* v2로직에서는 리디렉트되면 값이 없어지는 현상을 고치려고 바인딩 인자를 추가해줌 저렇게
+             *  세번째인자에 바인딩된값을 넣어주고
+             *  false는 값이 잘 넘어왔으면 false로 지정해줌(변수에 값이 들어있는지!)
+             *  그리고 나머지는 null null 로 구성
+             * 마지막은 기본오류 메세지!
+             *  */
+            //첫번째 인자는 모델에 담기는 item이름이고 두번째는 필드이름 세번째는 에러메세지.
+
+        }
+        if(item.getPrice() == null || item.getPrice()<1000 || item.getPrice() > 1000000){
+            bindingResult.addError(new FieldError("item", "price",item.getPrice(),false,new String[]{"range.item.price"},new Object[]{1000,1000000},"가격은 1,000 ~ 1,000,000 까지 허용합니다."));
+            /**
+             * 이런식으로 인자를 object배열 형식으로 넘겨줌
+             */
+
+            /*
+             * 예를 들어서 이부분이 qqq가 들어왔으면 타입체크가 안됨.
+             * 그러면 item.getPrice()에 qqq가 들어가고 그다음 false말고 true를 자동으로 내삽한다음에
+             * 뷰로 던져줌
+             */
+        }
+        if(item.getQuantity() == null || item.getQuantity() >=999){
+            bindingResult.addError(new FieldError("item", "quantity",item.getQuantity(),false,new String[]{"max.item.quantity"},new Object[]{9999}, "최대 수량은 9,999 까지만 허용합니다."));
+        }
+
+        if(item.getPrice() != null && item.getQuantity() != null){
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if(resultPrice < 10000){
+                bindingResult.addError(new ObjectError("item",new String[]{"totalPriceMin"},new Object[]{10000, resultPrice},"가격 * 수량의 합은 10000원이 넘지 않습니다."));
+                //오브젝트 에러는 뭔가를 넘겨줄때
+                //이거는 인자가 원래값이 없게 하나 생략.
+            }
+        }
+        //검증에 실패하면 다시 입력 폼으로
+        if(bindingResult.hasErrors()) {
+            return "validation/v2/addForm";
+        }
+
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+
+
+
+
+
+
+
+    //    이미 bindingResult 는 item객체를 알고 있고
+    //    불필요하게 인자가 많을 필요는 없음 그렇기 때문에 더 간단하게 적을수 있는 reject value사용
+    @PostMapping("/add")
+    public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult,
+                            RedirectAttributes redirectAttributes,
+                            Model model) {
+        //검증 로직
+        if(!StringUtils.hasText(item.getItemName())){
+//            bindingResult.addError(new FieldError("item", "itemName",item.getItemName(),false,new String[]{"required.item.itemName"},null, "상품 이름은 필수 입니다."));
+            bindingResult.rejectValue("itemName", "required");
+
+//            ValidationUtils.rejectIfEmpty(bindingResult, "itemName", "required");
+//            이 문장이 위의 if문을 대신해줌 - > 실제 타고 들어가도 if를 똑같이 구성해주고 rejectvalue까지 코드가 똑같음.
+
+            
+            /**
+             * 필드이름을 적어주고 errorCode 는 error.properties에 규칙성을 띈다. required.---. -- =oooo
+             *                                                              에러코드.객체이름.필드이름
+             *
+             *  처음엔 범용으로 적어주다가 require = oooo
+             *  나중에 갈수록 세세하게 require.item.itemName 을 적어주면 나중에 이게 우선순위를 가지고 이걸 띄워준다.
+             *
+             */
+
+            /**
+             * 커스텀 에러출력
+             *
+             * string 배열로 하기되면 만약 여러개가 들어가도 ㄱㅊ (error.properties)의 키값을 넣어줌.
+             * 인자가 필요없으니까 다음 값은 null
+             *
+             */
+
+
+            /* v2로직에서는 리디렉트되면 값이 없어지는 현상을 고치려고 바인딩 인자를 추가해줌 저렇게
+             *  세번째인자에 바인딩된값을 넣어주고
+             *  false는 값이 잘 넘어왔으면 false로 지정해줌(변수에 값이 들어있는지!)
+             *  그리고 나머지는 null null 로 구성
+             * 마지막은 기본오류 메세지!
+             *  */
+            //첫번째 인자는 모델에 담기는 item이름이고 두번째는 필드이름 세번째는 에러메세지.
+
+        }
+        if(item.getPrice() == null || item.getPrice()<1000 || item.getPrice() > 1000000){
+//            bindingResult.addError(new FieldError("item", "price",item.getPrice(),false,new String[]{"range.item.price"},new Object[]{1000,1000000},"가격은 1,000 ~ 1,000,000 까지 허용합니다."));
+            bindingResult.rejectValue("price", "range", new Object[]{1000,1000000},null);
+
+            /**
+             * 이런식으로 인자를 object배열 형식으로 넘겨줌
+             */
+
+            /*
+             * 예를 들어서 이부분이 qqq가 들어왔으면 타입체크가 안됨.
+             * 그러면 item.getPrice()에 qqq가 들어가고 그다음 false말고 true를 자동으로 내삽한다음에
+             * 뷰로 던져줌
+             */
+        }
+        if(item.getQuantity() == null || item.getQuantity() >=9999){
+//            bindingResult.addError(new FieldError("item", "quantity",item.getQuantity(),false,new String[]{"max.item.quantity"},new Object[]{9999}, "최대 수량은 9,999 까지만 허용합니다."));
+            bindingResult.rejectValue("quantity", "max", new Object[]{9999},null);
+
+        }
+
+        if(item.getPrice() != null && item.getQuantity() != null){
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if(resultPrice < 10000){
+//                bindingResult.addError(new ObjectError("item",new String[]{"totalPriceMin"},new Object[]{10000, resultPrice},"가격 * 수량의 합은 10000원이 넘지 않습니다."));
+                //오브젝트 에러는 뭔가를 넘겨줄때
+                //이거는 인자가 원래값이 없게 하나 생략.
+                bindingResult.reject("totalPriceMin",new Object[]{10000, resultPrice},null);
+            }
+        }
+        //검증에 실패하면 다시 입력 폼으로
+        if(bindingResult.hasErrors()) {
+            return "validation/v2/addForm";
+        }
+
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+
+
+
+
 
     @GetMapping("/{itemId}/edit")
     public String editForm(@PathVariable Long itemId, Model model) {

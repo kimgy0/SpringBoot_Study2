@@ -26,18 +26,22 @@
     <form action="item.html" th:action th:object="${item}" method="post">
 
 
-        <div th:if="${errors?.containsKey('globalError')}">
-            <p class="field-error" th:text="${errors['globalError']}">전체 오류 메세지</p>
+        <div th:if="${#fields.hasGlobalErrors()}">
+            <p class="field-error" th:each="err : ${#fields.globalErrors()}" th:text="${err}">전체 오류 메세지</p>
         </div>
-<!--    errors가 null이면 걍 무시하는 로직 ? -->
-
+                        <!--객체 접근 방법-->
 
         <div>
             <label for="itemName" th:text="#{label.item.itemName}">상품명</label>
             <input type="text" id="itemName" th:field="*{itemName}"
-                   th:class="${errors?.containsKey('itemName')}?'form-control field-error' : 'form-control'"
+                   th:errorclass="field-error"
                    class="form-control" placeholder="이름을 입력하세요">
-            <div class="field-error" th:if="${errors?.containsKey('itemName')}" th:text="${errors['itemName']}"> 상품명 오류</div>
+            <!-- 만약 field의 값으로 주어진 것에 에러가 생기면 errorclass에 값을 class인자로 추가해준다. -->
+
+            <!--     th:field는 정상상황에서 모델의 값을 사용하고 error발생시 FileError객체에서 값을  꺼내다가 사용한다.       -->
+
+            <div class="field-error" th:errors="*{itemName}"> 상품명 오류</div>
+            <!--        th:errors="*{itemName} 이런식으로 코드를 줄일 수 있음.  (에러가 있으면 출력, 아니면 없어짐.)  -->
         </div>
 
 
@@ -45,9 +49,9 @@
         <div>
             <label for="price" th:text="#{label.item.price}">가격</label>
             <input type="text" id="price" th:field="*{price}"
-                   th:class="${errors?.containsKey('price')}?'form-control field-error' : 'form-control'"
+                   th:errorclass="field-error"
                    class="form-control" placeholder="가격을 입력하세요">
-            <div class="field-error" th:if="${errors?.containsKey('price')}" th:text="${errors['price']}"> 가격오류</div>
+            <div class="field-error" th:errors="*{price}"> 가격오류</div>
         </div>
 
 
@@ -57,10 +61,9 @@
         <div>
             <label for="quantity" th:text="#{label.item.quantity}">수량</label>
             <input type="text" id="quantity" th:field="*{quantity}"
-                   th:class="${errors?.containsKey('quantity')}?'form-control field-error' : 'form-control'"
+                   th:errorclass="field-error"
                    class="form-control" placeholder="수량을 입력하세요">
-
-            <div class="field-error" th:if="${errors?.containsKey('quantity')}" th:text="${errors['quantity']}"> 상품명 오류</div>
+            <div class="field-error" th:errors="*{quantity}"> 상품명 오류</div>
         </div>
 
         <hr class="my-4">
