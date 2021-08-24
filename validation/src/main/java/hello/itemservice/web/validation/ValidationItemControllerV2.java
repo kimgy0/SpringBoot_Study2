@@ -3,6 +3,7 @@ package hello.itemservice.web.validation;
 import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -10,6 +11,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -17,11 +20,22 @@ import java.util.HashMap;
 import java.util.List;
 
 @Controller
+@Slf4j
 @RequestMapping("/validation/v2/items")
 @RequiredArgsConstructor
 public class ValidationItemControllerV2 {
 
+
+    private final ItemValidator itemValidator;
     private final ItemRepository itemRepository;
+
+    @InitBinder
+    public void init(WebDataBinder dataBinder){
+        dataBinder.addValidators(itemValidator);
+        /*
+            컨트롤러 호출시에 마다 webdatabinder가 들어오는데 이렇게 검증기를 등록해놓으면 컨트롤러 메서드 호출시마다 검증 가능.
+         */
+    }
 
     @GetMapping
     public String items(Model model) {
@@ -206,7 +220,7 @@ public class ValidationItemControllerV2 {
 
     //    이미 bindingResult 는 item객체를 알고 있고
     //    불필요하게 인자가 많을 필요는 없음 그렇기 때문에 더 간단하게 적을수 있는 reject value사용
-    @PostMapping("/add")
+//    @PostMapping("/add")
     public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult,
                             RedirectAttributes redirectAttributes,
                             Model model) {
@@ -218,7 +232,7 @@ public class ValidationItemControllerV2 {
 //            ValidationUtils.rejectIfEmpty(bindingResult, "itemName", "required");
 //            이 문장이 위의 if문을 대신해줌 - > 실제 타고 들어가도 if를 똑같이 구성해주고 rejectvalue까지 코드가 똑같음.
 
-            
+
             /**
              * 필드이름을 적어주고 errorCode 는 error.properties에 규칙성을 띈다. required.---. -- =oooo
              *                                                              에러코드.객체이름.필드이름
@@ -286,6 +300,78 @@ public class ValidationItemControllerV2 {
         redirectAttributes.addAttribute("status", true);
         return "redirect:/validation/v2/items/{itemId}";
     }
+
+
+
+
+
+
+//    @PostMapping("/add")
+    public String addItemV5(@ModelAttribute Item item, BindingResult bindingResult,
+                            RedirectAttributes redirectAttributes,
+                            Model model) {
+
+        if(itemValidator.supports(Item.class)){
+            itemValidator.validate(item, bindingResult);
+        }
+//        if --- 문을 적고 참거짓을 뽑아낸다음.
+        itemValidator.validate(item, bindingResult);
+
+
+        //검증에 실패하면 다시 입력 폼으로
+        if(bindingResult.hasErrors()) {
+            return "validation/v2/addForm";
+        }
+
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+
+
+
+
+
+    @PostMapping("/add")
+    public String addItemV6(@Validated @ModelAttribute Item item, BindingResult bindingResult,
+                            RedirectAttributes redirectAttributes,
+                            Model model) {
+//        @Validated 하나로 검증기 수행 가능. (검증기를 실행해라 라는 의미)
+//        만약 검증기가 여러개이면 supports메서드로 구분이 가능함.
+//        근데 support도 내가 호출하는게 아니라 자동으로 호출되어서 가능한 검증기를 뽑이냄.
+
+
+//        @InitBinder
+//        public void init(WebDataBinder dataBinder){
+//            dataBinder.addValidators(itemValidator);
+//        } 를 컨트롤러 클래스에 넣어줘야함.
+
+//        글로벌하게 전역컨트롤러에서 적용시켜주고 싶을때는
+//        implements WebMvcConfiguration 을 적어주고
+//        public Validator getValidator(){
+//              return new ItemValidator
+//       }
+//        를 적어주면 전역에 적용이 된다.
+//        대신에 저 @InitBinder 가 붙은 메서드는 주석처리를 하거나 지워줘야함. (전역에 적용하는 경우에만)
+//        @Validated 는 있어야함.
+
+
+
+        //검증에 실패하면 다시 입력 폼으로
+        if(bindingResult.hasErrors()) {
+            return "validation/v2/addForm";
+        }
+
+        //성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
 
 
 
