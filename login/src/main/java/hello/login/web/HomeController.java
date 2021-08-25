@@ -2,6 +2,7 @@ package hello.login.web;
 
 import hello.login.domain.member.Member;
 import hello.login.domain.member.MemberRepository;
+import hello.login.web.argumentresolver.Login;
 import hello.login.web.session.SessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,7 +89,7 @@ public class HomeController {
         return "loginHome";
     }
 
-    @GetMapping("/")
+//    @GetMapping("/")
     public String homeLoginV3Spring(@SessionAttribute(name = SessionConst.LOGIN_MEMBER, required = false) Member member, Model model) {
 
 //        HttpSession session = request.getSession(false);
@@ -100,6 +101,20 @@ public class HomeController {
 
         //세션 관리자에에 저장된 회원 정보 조회
 //        Object member = (Member) sessionManager.getSession(request);
+
+        if(member == null){
+            return "home";
+        }
+
+        model.addAttribute("member",member);
+        return "loginHome";
+    }
+
+    @GetMapping("/")
+    public String homeLoginV3SpringArgumentResolver(@Login Member member, Model model) {
+        /*
+         * 이번엔 아규먼트리졸버를 통해서 주입받는 방법
+         */
 
         if(member == null){
             return "home";

@@ -1,0 +1,13 @@
+session.getAttributeNames().asIterator()
+ .forEachRemaining(name -> log.info("session name={}, value={}",
+name, session.getAttribute(name)));
+
+public Optional<Member> findByLoginId(String loginId) {
+        return findAll().stream()
+                .filter(m -> m.getLoginId().equals(loginId))
+                .findFirst();
+
+                return Arrays.stream(cookies) //이렇게 하면 배열을 array stream형식으로 만들어줌.
+                                .filter(cookie -> cookie.getName().equals(cookieName))
+                                .findAny()
+                                .orElse(null);

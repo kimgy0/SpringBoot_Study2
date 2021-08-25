@@ -11,6 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -86,7 +87,10 @@ public class LoginController {
      * HTTP세션을 적용하자
      */
     @PostMapping("/login")
-    public String loginV3(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletRequest request){
+    public String loginV3(@Valid @ModelAttribute LoginForm form,
+                          @RequestParam(defaultValue = "/") String URL ,
+                          BindingResult bindingResult,
+                          HttpServletRequest request){
         if(bindingResult.hasErrors()){
             return "login/loginForm";
         }
@@ -102,7 +106,7 @@ public class LoginController {
 //        Cookie idCookie = new Cookie("member", String.valueOf(loginMember.getId()));
 //        response.addCookie(idCookie);
 
-        return "redircet:/";
+        return "redircet:"+URL;
     }
 
 
