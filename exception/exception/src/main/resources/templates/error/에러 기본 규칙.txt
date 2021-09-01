@@ -1,0 +1,2 @@
+templates에 /error/ 경로를 설정하고
+그에 맞는 html 4xx.html 이라던가 404.html이라던가 이런게 있으면 자동으로 basicerrorcontroller가 등록을 해준다.
