@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 /*
  * 기본 오류페이지를 커스터마이제이션 하기 위한 과정
  */
-@Component
+//@Component
 public class WebServerCustomizer implements WebServerFactoryCustomizer<ConfigurableWebServerFactory> {
 
 

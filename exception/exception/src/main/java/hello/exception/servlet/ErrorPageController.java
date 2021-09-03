@@ -1,11 +1,17 @@
 package hello.exception.servlet;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Controller
@@ -31,6 +37,44 @@ public class ErrorPageController {
         printErrorInfo(request);
         return "error-Page/500";
     }
+
+
+
+    //======================================================================================================
+    /**
+     * 1.
+     * html 을 반환하는것 말고 제이슨으로 반환하기 위해 오류코드를 빼주고 직접 객체를 만들어서 반환.
+     *
+     * produces = MediaType.APPLICATION_JSON_VALUE
+     * 요청 헤더는 aceept = application/json으로 설정해야한다.
+     *
+     *
+     */
+
+    @RequestMapping(value = "/error-page/500", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String,Object>> errorPage500Api(HttpServletRequest request, HttpServletResponse response){
+        log.info("API errorPage 500");
+
+        Map<String, Object> result = new HashMap<>();
+        Exception ex = (Exception) request.getAttribute(ERROR_EXCEPTION);
+        result.put("status", request.getAttribute(ERROR_STATUS_CODE));
+        result.put("message", ex.getMessage());
+
+        Integer statusCode = (Integer) request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+        // RequestDispatcher 이클래스에 상수 형식으로 정의되어있어!
+        // The value of the attribute is of type java.lang.Integer.
+
+        return new ResponseEntity<>(result, HttpStatus.valueOf(statusCode));
+    }
+
+
+
+
+
+
+
+
+
 
     private void printErrorInfo(HttpServletRequest request) {
         log.info("ERROR_EXCEPTION: ex=", request.getAttribute(ERROR_EXCEPTION));
