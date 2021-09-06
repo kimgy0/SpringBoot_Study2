@@ -1,13 +1,17 @@
 package hello.exception.api;
 
 
+import hello.exception.exception.BadRequestException;
 import hello.exception.exception.UserException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @Slf4j
@@ -69,4 +73,46 @@ public class ApiExceptionController {
         private String memberId;
         private String name;
     }
+
+
+
+//    @ResponseStatus(code = HttpStatus.BAD_REQUEST, reason = "잘못된 요청 오류")
+/*
+ * ResponseStatusExceptionResolver -> Default ... 순으로 진행됨.
+ * 이거는 ResponseStatusExceptionResolver 에 걸리는데 이 클래스를 가보면 핸들러 리졸버를 똑같이 구현하고 있음.
+ *
+ * 이전에 만들었던 handlerExceptionResolver 에 어노테이션 처리 로직을 달아준 것.
+ * 똑같이 sendError로 다시 날라오는 요청을 씹어버린다.
+ */
+    @GetMapping("/api/response-status-ex1")
+    public String responseStatusEx1(){
+        throw new BadRequestException();
+    }
+
+
+    //    responseStatusExceptionResolver.class
+    @GetMapping("/api/response-status-ex2")
+    public String responseStatusEx2(){
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "error.bad", new IllegalArgumentException());
+        //상태코드 / 리즌 / 실제 에러 발생 예외.
+    }
+
+
+
+
+
+    // DefaultExceptionHandler(DefaultExceptionHandlerResolver.class)
+    // 스프링 내부에 오류가 생겼을때.
+
+    // 알아서 400으로 바꿔줌.
+    // 디폴트익셉션리졸버 클래스에 doresolver 메서드에 가보면 많은 예외처리가 있다.
+    @GetMapping("/api/default-handler-ex")
+    public String defaultException(@RequestParam Integer data){
+        return "ok";
+    }
+
+    /**
+     * 리졸버가 모델뷰를 반환하는 것과 response에 에러코드를 달아서 보내는것은
+     * api 스펙에 잘 맞지 않다.
+     */
 }
