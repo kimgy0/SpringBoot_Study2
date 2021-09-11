@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<ul>
+    <li>${number}: <span th:text="${number}" ></span></li>
+    <li>${{number}}: <span th:text="${{number}}" ></span></li>
+    <!-- {{}} 대괄호를 각각두개씩 쓰면 컨버터를 적용하겠다는 뜻 입니다.   -->
+    <li>${ipPort}: <span th:text="${ipPort}" ></span></li>
+    <li>${{ipPort}}: <span th:text="${{ipPort}}" ></span></li>
+</ul>
+</body>
+</html>
