@@ -33,12 +33,12 @@ public class ItemController {
     private final ItemRepository itemRepository;
     private final FileStore fileStore;
 
-    @Getter("/items/new")
+    @GetMapping("/items/new")
     public String newItem(@ModelAttribute ItemForm form){
         return "item-form";
     }
 
-    @Getter("/items/new")
+    @GetMapping("/items/new")
     public String saveItem(@ModelAttribute ItemForm form, RedirectAttributes redirectAttributes) throws IOException {
         MultipartFile attachFile = form.getAttachFile();
         UploadFile uploadFile = fileStore.storeFile(attachFile);
@@ -82,8 +82,7 @@ public class ItemController {
 
 
     @GetMapping("/attach/{itemId}")
-    public ResponseEntity<Resource> downloadAttach(@PathVariable Long itemId)
-            throws MalformedURLException {
+    public ResponseEntity<Resource> downloadAttach(@PathVariable Long itemId) throws MalformedURLException {
         Item item = itemRepository.findById(itemId);
         String storeFileName = item.getAttachFile().getStoreFileName();
         String uploadFileName = item.getAttachFile().getUploadFileName();
